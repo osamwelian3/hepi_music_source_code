@@ -1,0 +1,63 @@
+body {
+    height: max-content;
+    width: 100vw;
+    background-color: #000;
+}
+
+.app__body {
+    height: max-content;
+    width: 100vw;
+    background-color: #000;
+    margin: 0;
+}
+
+.app__footer {
+    height: max-content;
+    width: 100vw;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+}
+
+@media only screen and (max-width: 600px) {
+    .app__body {
+        padding-top: 0px;
+    }
+}
+
+::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+
+@media only screen and (max-width: 600px) {
+    ::-webkit-scrollbar {
+        width: 0px;
+        height: 0px;
+    }
+}
+
+::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 5px rgb(0, 0, 0);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #101010;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #303030;
+}
+
+.music_player_container .rhap_container {
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.music_player_container .rhap_time {
+    color: '#fff'
+}

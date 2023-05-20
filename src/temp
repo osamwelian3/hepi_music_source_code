@@ -1,0 +1,13 @@
+useEffect(() => {
+    async function getContest() {
+        const contest = await getDocs(query(collection(db, 'contests'), where('name', '==', currentContest)))
+        contest.docs.forEach((doc) => {
+            setJoinedContestantsUidList(doc.data().listOfParticipants)
+        })
+        const contestants = await getDocs(query(collectionGroup(db, 'details'), where('uid', 'in', joinedContestantsUidList)))
+        contestants.docs.forEach((doc) => {
+            console.log(doc.data());
+        })
+    }
+    getContest()
+}, [currentContest])
