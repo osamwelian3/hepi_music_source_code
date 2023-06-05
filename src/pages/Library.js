@@ -5,18 +5,51 @@ import { IoCloseSharp } from 'react-icons/io5';
 import { Link } from 'react-router-dom';
 import '../components/mp.css';
 import { db } from '../config/fire';
+import ImageWithFallback from '../components/ImageWithFallback';
+import album_art from '../components/fallbackImages/album_art.jpeg';
+
+import { Amplify, Storage, API, graphqlOperation } from 'aws-amplify';
+import { listCategories } from '../graphql/queries';
+import awsconfig from '../aws-exports';
+Amplify.configure(awsconfig);
 function Library({ setSelectedSong, setIsBigPlayerVisible, arr, setSelectedCategory }) {
     const [allCategories, setAllCategories] = useState(null)
+    const [currentImage, setCurrentImage] = useState();
     const [q, setQ] = useState('')
-    useEffect(() => {
-        onSnapshot(collection(db, 'categories'), (snap) => {
+    useEffect(async () => {
+        // onSnapshot(collection(db, 'categories'), (snap) => {
+        //     let temp = []
+        //     snap.docs.forEach(doc => {
+        //         temp.push(doc.data())
+        //     })
+        //     setAllCategories(temp.reverse())
+        // })
+        await API.graphql(graphqlOperation(listCategories)).then((res)=>{
             let temp = []
-            snap.docs.forEach(doc => {
-                temp.push(doc.data())
-            })
+            res.data?.listCategories.items.forEach(doc => {
+                temp.push(doc)
+            });
             setAllCategories(temp.reverse())
-        })
+        }).catch((error)=>{
+            console.log(error);
+        });
     }, [])
+
+    // useEffect(async ()=>{
+    //     // getImage('images/mmi u fine.jpg')
+    // }, [])
+    // function getImage(key){
+    //     let promise = new Promise()
+    //     const image = await Storage.get(key);
+    //     setCurrentImage({key: image});
+    //     return (
+    //         <Link to={'/song'}>
+    //             <img src={currentImage['images/mmi u fine.jpg']}
+    //                 style={{ width: '120px', height: '120px', borderRadius: '10px' }}
+    //             />
+    //         </Link>
+    //     )
+    // }
     return (
         <div className='page_container' style={{ padding: '10px 0px' }}>
             <div className='searchbar_container'>
@@ -48,10 +81,14 @@ function Library({ setSelectedSong, setIsBigPlayerVisible, arr, setSelectedCateg
                                     <div style={{ padding: '10px 0px', minWidth: '100vw', paddingLeft: '20px', height: 'max-content', display: 'flex', overflow: 'scroll' }}>
                                         {
                                             arr && arr.filter(song => song.selectedCategory === one.name).slice(0, 10).map((one) => {
+                                                // console.log(one.thumbnailKey)
+                                                // Storage.get(one.thumbnailKey, { download: true })
+                                                const key = one.thumbnailKey
                                                 return (
                                                     <div onClick={() => { setSelectedSong(one); setIsBigPlayerVisible(true) }} style={{ minWidth: 'max-content', height: 'max-content', padding: '10px' }}>
                                                         <Link to={'/song'}>
-                                                            <img src={one.thumbnail}
+                                                            <ImageWithFallback src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/"+one.thumbnailKey)}
+                                                                fallbackSrc={album_art}
                                                                 style={{ width: '120px', height: '120px', borderRadius: '10px' }}
                                                             />
                                                         </Link>
@@ -76,11 +113,10 @@ function Library({ setSelectedSong, setIsBigPlayerVisible, arr, setSelectedCateg
                             arr && arr.sort((a, b) => a?.listOfUidUpVotes?.length - b?.listOfUidUpVotes?.length).reverse().slice(0, 10).map((one) => {
                                 return (
                                     <div onClick={() => { setSelectedSong(one); setIsBigPlayerVisible(true) }} style={{ minWidth: 'max-content', height: 'max-content', padding: '10px' }}>
-                                        <Link to={'/song'}>
-                                            <img src={one.thumbnail}
-                                                style={{ width: '120px', height: '120px', borderRadius: '10px' }}
-                                            />
-                                        </Link>
+                                        <ImageWithFallback src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/"+one.thumbnailKey)}
+                                            fallbackSrc={album_art}
+                                            style={{ width: '120px', height: '120px', borderRadius: '10px' }}
+                                        />
                                         <p style={{ marginBottom: '0', marginTop: '3px', maxWidth: '150px', fontSize: '0.9em' }}>{one.name}</p>
                                     </div>
                                 )
@@ -97,7 +133,8 @@ function Library({ setSelectedSong, setIsBigPlayerVisible, arr, setSelectedCateg
                             arr && arr.filter(song => song.name.toLowerCase().includes(q.toLowerCase())).map((one) => {
                                 return (
                                     <div onClick={() => { setSelectedSong(one); setIsBigPlayerVisible(true) }} style={{ width: '100%', marginBottom: '30px', height: 'calc(50vw - 20px)', padding: '10px' }}>
-                                        <img src={one.thumbnail}
+                                        <ImageWithFallback src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/"+one.thumbnailKey)}
+                                            fallbackSrc={album_art}
                                             style={{ width: '-webkit-fill-available', height: '-webkit-fill-available', borderRadius: '10px' }}
                                         />
                                         <p style={{ marginTop: '3px', paddingLeft: '5px' }}>{one.name}</p>

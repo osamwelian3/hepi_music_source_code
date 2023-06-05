@@ -1,0 +1,29 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-hepimusic-dev-203416-authRole",
+      "UnauthRoleArn": "arn:aws:iam::950348583996:role/amplify-hepimusic-dev-203416-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::950348583996:role/amplify-hepimusic-dev-203416-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-hepimusic-dev-203416-deployment",
+      "UnauthRoleName": "amplify-hepimusic-dev-203416-unauthRole",
+      "StackName": "amplify-hepimusic-dev-203416",
+      "StackId": "arn:aws:cloudformation:ap-south-1:950348583996:stack/amplify-hepimusic-dev-203416/3a089df0-fa59-11ed-b84a-0a5f049f7d94",
+      "AmplifyAppId": "d1mkhi2lyr9x1n"
+    },
+    "categories": {
+      "api": {
+        "hepimusic": {}
+      },
+      "auth": {
+        "hepimusicd2e09eab": {}
+      },
+      "storage": {
+        "hepimusicstorage": {}
+      },
+      "hosting": {
+        "S3AndCloudFront": {}
+      }
+    }
+  }
+}

@@ -1,11 +1,78 @@
 import { auth2, db2, storage2 } from './config/fire';
+import { Amplify, Storage } from 'aws-amplify';
 import { ref as sRef } from 'firebase/storage';
 import { getDownloadURL, uploadBytesResumable } from 'firebase/storage';
+import awsconfig from './aws-exports';
+import { Auth } from 'aws-amplify';
+Amplify.configure(awsconfig);
+
+
+// let username = prompt("Enter Username: ");
+// let password = prompt("Enter password: ");
+
+// async function confirmSignUp() {
+//     let code = prompt("Enter confirmation code: ");
+//     try {
+//       await Auth.confirmSignUp(username, code);
+//     } catch (error) {
+//       console.log('error confirming sign up', error);
+//     }
+//   }
+
+// async function signIn() {
+//     try {
+//       const user = await Auth.signIn(username, password);
+//     } catch (error) {
+//       console.log('error signing in', error);
+//       await signUp();
+//     }
+//   }
+
+// async function signUp() {
+//     // let username = prompt("Enter Username: ");
+//     // let password = prompt("Enter password: ");
+//     let email = prompt("Enter email: ");
+//     let phone_number = prompt("Enter phone number: ");
+//     try {
+//         const { user } = await Auth.signUp({
+//             username,
+//             password,
+//             attributes: {
+//             email,          // optional
+//             phone_number,   // optional - E.164 number convention
+//             // other custom attributes 
+//             },
+//             autoSignIn: { // optional - enables auto sign in after user is confirmed
+//             enabled: true,
+//             }
+//         });
+//         console.log(user);
+//         await confirmSignUp();
+//         } catch (error) {
+//         console.log('error signing up:', error);
+//         }
+    
+//   }
+
+//   export async function signOut() {
+//     try {
+//       await Auth.signOut({ global: true });
+//     } catch (error) {
+//       console.log('error signing out: ', error);
+//     }
+//   }
 
 // Download a file form a url.
-export async function saveImageFile(url) {
-    let myPromise = new Promise(function(resolve){
-
+export async function saveImageFile(url, authState) {
+    let myPromise = new Promise(async function(resolve){
+        // await signOut();
+        // if (!authState){
+        //     alert ("Not authenticated. Sign/Register in first")
+        //     await signIn();
+        // } else {
+        //     alert("Already Authenticated");
+        //     await signIn();
+        // }
         var downloadUrl = null;
         // Get file name from url.
         var filename = url.substring(url.lastIndexOf("/") + 1).split("?")[0].replace("images%2F", "").replaceAll("%20"," ");
@@ -29,7 +96,7 @@ export async function saveImageFile(url) {
                 // `blob` response
                 console.log(this.response);
                 var reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = async function(e) {
 
                     const imageFile = e.target.result;
 
@@ -41,24 +108,31 @@ export async function saveImageFile(url) {
 
                     const imageOne = blob; // imageFile;
                     const storageRef = sRef(storage2, `images/${filename}`); // ${imageOne.name}
+                    const stored = await Storage.put(`images/${filename}`, imageOne).then(async (res)=>{
+                        downloadUrl = await Storage.get(`images/${filename}`, { validateObjectExistence: true });
+                        console.log(res)
+                        resolve({"downloadUrl": downloadUrl, "key": res.key})
+                    }).catch((err)=>{
+                        console.log(err);
+                    });
 
-                    const uploadTask = uploadBytesResumable(storageRef, imageOne);
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                        },
-                        (error) => {
-                            alert(error)
-                        },
-                        () => {
-                            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                                // setProfileLoading(false)
-                                // setThumbnail(downloadURL)
-                                downloadUrl = downloadURL;
-                                alert("downloadURL: "+downloadURL);
-                                resolve(downloadURL);
-                            });
-                        }
-                    );
+                    // const uploadTask = uploadBytesResumable(storageRef, imageOne);
+                    // uploadTask.on('state_changed',
+                    //     (snapshot) => {
+                    //     },
+                    //     (error) => {
+                    //         alert(error)
+                    //     },
+                    //     () => {
+                    //         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    //             // setProfileLoading(false)
+                    //             // setThumbnail(downloadURL)
+                    //             downloadUrl = downloadURL;
+                    //             alert("downloadURL: "+downloadURL);
+                    //             resolve(downloadURL);
+                    //         });
+                    //     }
+                    // );
         
                     // var auth = firebase.auth();
                     // var storageRef = firebase.storage().ref();
@@ -97,9 +171,15 @@ export async function saveImageFile(url) {
         };
         
         
-        
-        xhr.open('GET', url);
-        xhr.send();
+        await Storage.get(`images/${filename}`, { validateObjectExistence: true }).then((res)=>{
+            console.log(res);
+            resolve({"downloadUrl": res, "key": `images/${filename}`});
+        }).catch((error)=>{
+            console.log("Doesnt exist");
+            console.log(error);
+            xhr.open('GET', url);
+            xhr.send();
+        });
 
     });
 
@@ -109,8 +189,15 @@ export async function saveImageFile(url) {
 
 
 // Download a file form a url.
-export async function saveMusicFile(url) {
-    let myPromise = new Promise(function(resolve){
+export async function saveMusicFile(url, authState) {
+    let myPromise = new Promise(async function(resolve){
+        // if (!authState){
+        //     alert ("Not authenticated. Sign/Register in first")
+        //     await signIn();
+        // } else {
+        //     alert("Already Authenticated");
+        //     // await signIn();
+        // }
 
         var downloadUrl = null;
         // Get file name from url.
@@ -135,7 +222,7 @@ export async function saveMusicFile(url) {
                 // `blob` response
                 console.log(this.response);
                 var reader = new FileReader();
-                reader.onload = function(e) {
+                reader.onload = async function(e) {
 
                     const imageFile = e.target.result;
 
@@ -147,34 +234,49 @@ export async function saveMusicFile(url) {
 
                     const imageOne = blob; // imageFile;
                     const storageRef = sRef(storage2, `files/${filename}`); // ${imageOne.name}
+                    
+                    const stored = await Storage.put(`files/${filename}`, imageOne).then(async (res)=>{
+                        // To check for existence of a file
+                        downloadUrl = await Storage.get(`files/${filename}`, { validateObjectExistence: true });
+                        console.log(res);
+                        resolve({"downloadUrl": downloadUrl, "key": res.key});
+                    }).catch((err)=>{
+                        console.log(err);
+                    })
+                    
 
-                    const uploadTask = uploadBytesResumable(storageRef, imageOne);
-                    uploadTask.on('state_changed',
-                        (snapshot) => {
-                        },
-                        (error) => {
-                            alert(error)
-                        },
-                        () => {
-                            getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                                // setProfileLoading(false)
-                                // setThumbnail(downloadURL)
-                                downloadUrl = downloadURL;
-                                alert("downloadURL: "+downloadURL);
-                                resolve(downloadURL);
-                            });
-                        }
-                    );
+                    // const uploadTask = uploadBytesResumable(storageRef, imageOne);
+                    // uploadTask.on('state_changed',
+                    //     (snapshot) => {
+                    //     },
+                    //     (error) => {
+                    //         alert(error)
+                    //     },
+                    //     () => {
+                    //         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    //             // setProfileLoading(false)
+                    //             // setThumbnail(downloadURL)
+                    //             downloadUrl = downloadURL;
+                    //             alert("downloadURL: "+downloadURL);
+                    //             resolve(downloadURL);
+                    //         });
+                    //     }
+                    // );
         
                 };
                 reader.readAsDataURL(this.response);        
             };
         };
         
-        
-        
-        xhr.open('GET', url);
-        xhr.send();
+        await Storage.get(`files/${filename}`, { validateObjectExistence: true }).then((res)=>{
+            console.log(res);
+            resolve({"downloadUrl": res, "key": `files/${filename}`});
+        }).catch((error)=>{
+            console.log("Doesnt exist");
+            console.log(error);
+            xhr.open('GET', url);
+            xhr.send();
+        });
 
     });
 
@@ -231,3 +333,26 @@ function transferFailed(evt) {
 function transferCanceled(evt) {
     console.log("The transfer has been canceled by the user.");
 }
+
+// Keeping this here
+// temporary job
+// useEffect(async ()=>{
+//     onSnapshot(collection(db, 'songs'), (snap) => {
+//         snap.docs.forEach(async doc => {
+//             arr.forEach(async item => {
+//                 if (doc.data().key === item.key){
+//                     const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = item;
+//                     const modifiedSongWithPartOf = { ...modifiedSong, partOf: doc.data().partOf };
+//                     if (doc.data().partOf){
+//                         alert(doc.data().partOf)
+//                     }
+//                     console.log(doc.data());
+//                     await API.graphql(graphqlOperation(updateSong, { input: modifiedSongWithPartOf })).then((res) => {
+//                         console.log(res)
+//                     })
+//                 }
+//             })
+//         })
+//     })
+// }, [])
+// end of temporary job

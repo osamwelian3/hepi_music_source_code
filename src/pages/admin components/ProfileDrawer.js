@@ -11,6 +11,9 @@ import ListItemText from '@mui/material/ListItemText';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../config/fire';
 import { Link } from 'react-router-dom';
+import { Amplify, Storage, Auth } from 'aws-amplify';
+import awsconfig from '../../aws-exports';
+Amplify.configure(awsconfig)
 
 
 
@@ -26,6 +29,17 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
         'What is Hepi',
         'Support',
     ];
+    async function authSignOut() {
+        try {
+          await Auth.signOut();
+        } catch (error) {
+          console.log('error signing out: ', error);
+        }
+      }
+    async function logOut() {
+        await authSignOut();
+        return signOut(auth)
+    }
     const RenderIcon = ({ i }) => {
         switch (i) {
             case 0:
@@ -77,8 +91,8 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
         >
             <List>
                 {options.map((text, index) => (
-                    <ListItem key={text} onClick={() => {
-                        index === 0 && signOut(auth)
+                    <ListItem key={text} onClick={async () => {
+                        index === 0 && await logOut()
                     }}>
                         {
                             index === 1 &&

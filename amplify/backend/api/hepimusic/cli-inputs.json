@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "hepimusic",
+    "serviceName": "AppSync",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 365,
+      "apiKeyExpirationDate": "2024-05-23T17:58:23.275Z",
+      "keyDescription": "hepi-amplify-cli-api-key"
+    },
+    "conflictResolution": {}
+  }
+}

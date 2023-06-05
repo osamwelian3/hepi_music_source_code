@@ -1,29 +1,132 @@
 import { createUserWithEmailAndPassword, FacebookAuthProvider, GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { Amplify, Auth, Storage, API, graphqlOperation } from 'aws-amplify';
+import { createUser } from '../graphql/mutations';
+import { collection, collectionGroup, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
-import { auth } from '../config/fire'
+import { auth, db2 } from '../config/fire'
 import { db } from '../config/fire'
+import awsconfig from '../aws-exports';
+import AudioPlayer from 'react-h5-audio-player';
+Amplify.configure(awsconfig);
 
 
 function Login({ setIsLoginVisible }) {
     const [register, setRegister] = useState(false)
     const [userName, setUserName] = useState("")
     const [email, setEmail] = useState("")
+    const [phone_number, setPhone_Number] = useState("")
     const [password, setPassword] = useState("")
+    const [isAuthenticating, setIsAuthenticating] = useState(false)
+    const [currentUser, setCurrentUser] = useState(null)
+    async function getCurrentUser(){
+        const promise = new Promise(async function (resolve){
+            await Auth.currentUserInfo().then((user)=>{
+                resolve(user);
+            });
+        });
+
+        return await promise;
+    }
+    useEffect(async () => {
+        await getCurrentUser().then((res)=>{
+            console.log(res)
+            setCurrentUser(res)
+        })
+    }, [isAuthenticating]);
     const history = useHistory()
+    async function signIn() {
+        try {
+          await Auth.signIn(userName, password).then((user)=>{
+            
+          }).catch((err)=>{
+            console.log(err);
+          });
+        } catch (error) {
+          console.log('error signing in', error);
+        }
+      }
     async function login() {
+        setIsAuthenticating(true)
         if (email !== "" && password !== "") {
             await signInWithEmailAndPassword(
                 auth, email, password
             ).then(() => {
-                if (auth.currentUser.uid === "7rbDXS9eipV7OXSTYCWsnWu8wxx1") {
-                    history.push('/admin')
-                } else {
-                    history.push('/')
-                }
+                onSnapshot(collectionGroup(db, 'user_details'), (snap)=>{
+                    console.log(snap);
+                    snap.docs.forEach(async user=>{
+                        if (auth.currentUser.uid === user.data().uid){
+                            console.log(user.data());
+                            setUserName(user.data().name);
+                            await Auth.signIn(user.data().name, password).then((res)=>{
+                                console.log(res);
+                                setIsAuthenticating(false)
+                                console.log(res?.attributes?.sub);
+                                if (res?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2") {
+                                    history.push('/admin')
+                                } else {
+                                    console.log(currentUser?.attributes?.sub);
+                                    history.push('/')
+                                }
+                            }).catch(async (err)=>{
+                                const code = err.code;
+                                console.log(err);
+                                switch (code) {
+                                    case 'UserNotFoundException':
+                                        await Auth.signUp({
+                                            username: user.data().name,
+                                            password,
+                                            attributes: {
+                                                email,          // optional
+                                                phone_number,   // optional - E.164 number convention
+                                                // other custom attributes 
+                                            },
+                                            autoSignIn: { // optional - enables auto sign in after user is confirmed
+                                                enabled: true,
+                                            }
+                                            }).then(async (user)=>{
+                                                console.log(user);
+                                                setIsAuthenticating(false)
+                                                if (user?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2") {
+                                                    history.push('/admin')
+                                                } else {
+                                                    history.push('/')
+                                                }
+                                                // await API.graphql(graphqlOperation(createUser, {input: {}}))
+                                            });
+                                        return false;
+                                    case 'NotAuthorizedException':
+                                        setIsAuthenticating(false)
+                                        return true;
+                                    case 'PasswordResetRequiredException':
+                                        setIsAuthenticating(false)
+                                        return false;
+                                    case 'UserNotConfirmedException':
+                                        alert("Please confirm your new account before the closure of the migration period.");
+                                        setIsAuthenticating(false)
+                                        if (auth.currentUser.uid === "7rbDXS9eipV7OXSTYCWsnWu8wxx1") {
+                                            history.push('/admin')
+                                        } else {
+                                            history.push('/')
+                                        }
+                                        return false;
+                                    default:
+                                        setIsAuthenticating(false)
+                                        return false;
+                                }
+                            });
+                        }
+                    });
+                });
+                // if (auth.currentUser.uid === "7rbDXS9eipV7OXSTYCWsnWu8wxx1") {
+                //     history.push('/admin')
+                // } else {
+                //     history.push('/')
+                // }
             }).catch(error => {
+                setIsAuthenticating(false)
+                console.log(error);
                 switch (error.message) {
                     case 'Firebase: Error (auth/invalid-email).':
                         alert('You entered invalid email-id')
@@ -32,7 +135,7 @@ function Login({ setIsLoginVisible }) {
                         alert('You entered wrong password')
                         break;
                     default:
-                        alert('Something went wrong try again later', error.message)
+                        alert('Something went wrong try again later', error)
                         break;
                 }
             })
@@ -77,28 +180,80 @@ function Login({ setIsLoginVisible }) {
                 alert(error.message, 'error while register')
             });
     }
+    // async function signup() {
+    //     if (email !== "" && password !== "" && password.length > 6 && userName !== "") {
+    //         await createUserWithEmailAndPassword(
+    //             auth, email, password
+    //         ).then(() => {
+    //             setDoc(doc(db, 'users', auth.currentUser.uid, 'user_details', 'info'), {
+    //                 name: userName,
+    //                 uid: auth.currentUser.uid
+    //             }).then(() => {
+    //                 history.push('/')
+    //             })
+    //         }).catch(error => {
+    //             console.log(error);
+    //             alert(error.message, 'error while register')
+    //         })
+    //     } else if (userName === "") {
+    //         alert("User name not entered")
+    //     } else if (email === "") {
+    //         alert("Email not entered")
+    //     } else if (password.length < 6) {
+    //         alert("password must be at least 6 characters")
+    //     } else {
+    //         alert('Oops, an error occurred try again later')
+    //     }
+    // }
     async function signup() {
+        setIsAuthenticating(true)
         if (email !== "" && password !== "" && password.length > 6 && userName !== "") {
-            await createUserWithEmailAndPassword(
-                auth, email, password
-            ).then(() => {
-                setDoc(doc(db, 'users', auth.currentUser.uid, 'user_details', 'info'), {
-                    name: userName,
-                    uid: auth.currentUser.uid
-                }).then(() => {
-                    history.push('/')
-                })
-            }).catch(error => {
-                console.log(error);
-                alert(error.message, 'error while register')
-            })
+            try {
+                await Auth.signUp({
+                username: userName,
+                password,
+                attributes: {
+                    email,          // optional
+                    phone_number,   // optional - E.164 number convention
+                    // other custom attributes 
+                },
+                autoSignIn: { // optional - enables auto sign in after user is confirmed
+                    enabled: true,
+                }
+                }).then(async (user)=>{
+                    console.log(user);
+                    await createUserWithEmailAndPassword(auth, email, password).then(()=>{
+                        setDoc(doc(db, 'users', auth.currentUser.uid, 'user_details', 'info'), {
+                            name: userName,
+                            uid: auth.currentUser.uid
+                        }).then(() => {
+                            setIsAuthenticating(false)
+                            history.push('/')
+                        })
+                    }).catch((error)=>{
+                        setIsAuthenticating(false)
+                        alert(error.message);
+                    });
+                    
+                    // await API.graphql(graphqlOperation(createUser, {input: {}}))
+                });
+                // console.log(user);
+            } catch (error) {
+                setIsAuthenticating(false)
+                alert(error.message);
+                console.log('error signing up:', error);
+            }
         } else if (userName === "") {
+            setIsAuthenticating(false)
             alert("User name not entered")
         } else if (email === "") {
+            setIsAuthenticating(false)
             alert("Email not entered")
         } else if (password.length < 6) {
+            setIsAuthenticating(false)
             alert("password must be at least 6 characters")
         } else {
+            setIsAuthenticating(false)
             alert('Oops, an error occurred try again later')
         }
     }
@@ -114,17 +269,23 @@ function Login({ setIsLoginVisible }) {
             setIsLoginVisible(false)
         }
     }, [])
-
     return (
         <div className='login_bg' style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            {isAuthenticating ? 
+            <div className='login_fg' style={{ width: '100vw', height: '100vh', backgroundColor: `rgba(0,0,0,0.5)`, background: `url("https://mir-s3-cdn-cf.behance.net/project_modules/disp/04de2e31234507.564a1d23645bf.gif")`, backgroundBlendMode: 'multiply', backgroundRepeat: 'no-repeat', position: 'absolute', backgroundPosition: 'center'}}></div>
+            :
+            <></>}
 
             {
                 (
                     register === false ?
                         <div className='login_form_bg' style={{ textAlign: 'center', width: "90vw", maxWidth: '400px', height: 'max-content', padding: '10px', borderRadius: '10px' }} >
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '-10vh', marginBottom: '20px', padding: '0px 10px' }}>
-                                <img src='https://firebasestorage.googleapis.com/v0/b/storage-urli.appspot.com/o/logo-1.jpg?alt=media&token=86a08736-bd2c-4ce3-a957-11d3cad933a6' style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
+                                <img src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo2.jpg")} style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
 
+                            </div>
+                            <div>
+                                <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }}>We are currently migrating to a new server to serve you better with high quality streaming. Due to this we will require all users to verify their accounts. Once you login to your previous account. An email will be sent to your email address to verify your new account. Thank you for your continued loyalty to Hepi Music.</p>
                             </div>
                             <div>
                                 <input type="email" placeholder='Email' onChange={(e) => { setEmail(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
@@ -144,13 +305,19 @@ function Login({ setIsLoginVisible }) {
                         :
                         <div className='login_form_bg' style={{ textAlign: 'center', width: "90vw", maxWidth: '400px', height: 'max-content', padding: '10px', borderRadius: '10px' }} >
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '-10vh', marginBottom: '20px', padding: '0px 10px' }}>
-                                <img src='https://www.hepimusic.com/backend/images/logo-1.JPEG' style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
+                                <img src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo2.jpg")} style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
+                            </div>
+                            <div>
+                                <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }}>We are currently migrating to a new server to serve you better with high quality streaming. Due to this we will require all users to verify their accounts. Once you login to your previous account. An email will be sent to your email address to verify your new account. Thank you for your continued loyalty to Hepi Music.</p>
                             </div>
                             <div>
                                 <input type="text" placeholder='User name' onChange={(e) => { setUserName(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
                             </div>
                             <div>
                                 <input type="Email" placeholder='Email' onChange={(e) => { setEmail(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
+                            </div>
+                            <div>
+                                <input type="Tel" placeholder='Phone (+254 7xx xxx xxx)' onChange={(e) => { setPhone_Number(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
                             </div>
                             <div>
                                 <input placeholder='Password' type="password" onChange={(e) => { setPassword(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />

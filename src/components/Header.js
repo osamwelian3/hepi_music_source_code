@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useHistory, useLocation } from 'react-router-dom';
 import { FaChartLine } from 'react-icons/fa'
 import { HiOutlineUserGroup } from 'react-icons/hi';
@@ -8,12 +8,45 @@ import { IoAlbums, IoHeart } from 'react-icons/io5';
 import { CgProfile } from 'react-icons/cg'
 import { auth } from '../config/fire';
 import { signOut } from 'firebase/auth';
-function Header({ setIsProfileShown }) {
+import { Amplify, Storage, Auth } from 'aws-amplify';
+import awsconfig from '../aws-exports';
+Amplify.configure(awsconfig)
+function Header({ setIsProfileShown, isAuthenticated }) {
+    const [logo, setLogo] = useState()
+    const [currentUser, setCurrentUser] = useState(null)
+    async function getCurrentUser(){
+        const promise = new Promise(async function (resolve){
+            await Auth.currentUserInfo().then((user)=>{
+                resolve(user);
+            });
+        });
+
+        return await promise;
+    }
+    useEffect(async () => {
+        await getCurrentUser().then((res)=>{
+            console.log(res)
+            setCurrentUser(res)
+        })
+        if (!auth.currentUser){
+            authSignOut()
+            setCurrentUser(null)
+        }
+    }, [isAuthenticated]);
     const history = useHistory()
     const location = useLocation();
-    // function logOut() {
-    //     return signOut(auth)
-    // }
+    async function authSignOut() {
+        try {
+          await Auth.signOut();
+        } catch (error) {
+          console.log('error signing out: ', error);
+        }
+      }
+    async function logOut() {
+        await authSignOut();
+        setCurrentUser(null)
+        return signOut(auth)
+    }
     function getWindowDimensions() {
         const { innerWidth: width, innerHeight: height } = window;
         return {
@@ -24,22 +57,22 @@ function Header({ setIsProfileShown }) {
     if (location.pathname === '/admin') {
         return (
             <div className="header" >
-                <img onClick={() => { history.push('/') }} src='https://www.hepimusic.com/backend/images/logo-1.JPEG' style={{ height: '50px', width: '70px' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}>Admin</h1>
+                <img onClick={() => { history.push('/') }} src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo.png")} style={{ height: '50px', width: '70px' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}>Admin</h1>
                 <div style={{ flex: '1' }}></div>
-                <buttn onClick={() => { signOut(auth); history.push('/') }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
+                <button onClick={async () => { await logOut(); history.push('/') }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
                     LogOut
-                </buttn>
+                </button>
             </div>
         )
     }
     if (location.pathname === '/profile') {
         return (
             <div className="header" >
-                <img onClick={() => { history.push('/') }} src='https://www.hepimusic.com/backend/images/logo-1.JPEG' style={{ height: '50px', width: '70px' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}>Profile</h1>
+                <img onClick={() => { history.push('/') }} src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo.png")} style={{ height: '50px', width: '70px' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}>Profile</h1>
                 <div style={{ flex: '1' }}></div>
-                <buttn onClick={() => { signOut(auth); history.push('/') }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
+                <button onClick={async () => { await logOut(); history.push('/') }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
                     LogOut
-                </buttn>
+                </button>
             </div>
         )
     }
@@ -48,17 +81,20 @@ function Header({ setIsProfileShown }) {
             {
                 getWindowDimensions().width < 600 && location.pathname !== '/login' &&
                 <div className="header" >
-                    <img onClick={() => { history.push('/') }} src='https://firebasestorage.googleapis.com/v0/b/storage-urli.appspot.com/o/Hepi.png?alt=media&token=6a57bf09-c514-40b6-94d2-e7de772056a9' style={{ height: '32px', width: '32px', margin: '0px 30px', borderRadius: '50vh' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}></h1>
+                    <img onClick={() => { history.push('/') }} src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/Hepi.png")} style={{ height: '32px', width: '32px', margin: '0px 30px', borderRadius: '50vh' }} /><h1 style={{ margin: '0', color: '#f3b007', fontWeight: '500', fontSize: '1.3em' }}></h1>
                     <div style={{ flex: '1' }}></div>
                     {
-                        !auth.currentUser ?
+                        !currentUser ? // !auth.currentUser
                             <Link to={'/login'}>
-                                <buttn style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
+                                <button style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
                                     Login
-                                </buttn>
+                                </button>
                             </Link>
                             :
-                            <CgProfile onClick={() => { setIsProfileShown(true) }} style={{ fontSize: '2em', color: '#f3b007', margin: '0px 20px' }} />
+                            <>
+                                { !auth.currentUser ? async () => { await authSignOut(); history.push(location.pathname); } : '' }
+                                <CgProfile onClick={() => { setIsProfileShown(true) }} style={{ fontSize: '2em', color: '#f3b007', margin: '0px 20px' }} />
+                            </>
                     }
                 </div>
             }
@@ -74,16 +110,17 @@ function Header({ setIsProfileShown }) {
                         <>
                             <div style={{ width: '100%' }}></div>
                             {
-                                !auth.currentUser ?
+                                !currentUser ? // !auth.currentUser
                                     <Link to={'/login'}>
                                         <buttn style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
                                             Login
                                         </buttn>
                                     </Link>
                                     :
-                                    <buttn onClick={() => { signOut(auth) }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
+                                    <button onClick={async () => { await logOut() }} style={{ display: 'flex', alignItems: 'center', borderRadius: '5px', fontSize: '0.9em', padding: '3px 15px', color: '#f3b007', backgroundColor: '#f3b00730', margin: '0px 20px' }} className='btn'>
+                                    { !auth.currentUser ? async () => { await authSignOut(); history.push(location.pathname); } : '' }
                                         LogOut
-                                    </buttn>
+                                    </button>
                             }
                         </>
                     }

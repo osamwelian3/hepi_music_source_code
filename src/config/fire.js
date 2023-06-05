@@ -10,7 +10,7 @@ import { getStorage } from "firebase/storage";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-const firebaseConfig2 = {
+const firebaseConfig = {
     apiKey: "AIzaSyDW8jrSbbxaa1BZx8KqIduJkDuo7X9HfJw",
     authDomain: "storage-urli.firebaseapp.com",
     databaseURL: "https://storage-urli-default-rtdb.europe-west1.firebasedatabase.app",
@@ -20,7 +20,7 @@ const firebaseConfig2 = {
     appId: "1:55593132691:web:309c973bfed7d9f8362366"
 };
 
-const firebaseConfig = {
+const firebaseConfig2 = {
   apiKey: "AIzaSyDJzZR1b4o5pnBWEGxsbZ5roSb0J21v9vM",
   authDomain: "hepi-music-dev.firebaseapp.com",
   databaseURL: "https://hepi-music-dev-default-rtdb.firebaseio.com",

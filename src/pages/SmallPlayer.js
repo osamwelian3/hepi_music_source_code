@@ -29,7 +29,7 @@ function SmallPlayer({ selectedSong, setSelectedSong, allSongs }) {
         <div className='detail_modal' style={{ height: 'min-content', maxHeight: 'max-content', width: '100vw', position: 'fixed', display: location.pathname === '/login' ? 'none' : 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', bottom: '0px', left: '0', zIndex: '99', background: '#000' }}>
             <AudioPlayer
                 autoPlay
-                src={selectedSong?.fileUrl}
+                src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/"+selectedSong?.fileKey)}
                 onPlay={e => console.log("on Play")}
                 style={{ maxWidth: '450px' }}
                 showSkipControls={true}
@@ -37,6 +37,7 @@ function SmallPlayer({ selectedSong, setSelectedSong, allSongs }) {
                 onClickNext={() => { next() }}
                 onClickPrevious={() => { prev() }}
                 onEnded={() => { next() }}
+                crossOrigin='allow'
                 customVolumeControls={
                     [
                         <FaExpandArrowsAlt style={{ color: '#fff', margin: '0px 5px', color: '#000' }} />
