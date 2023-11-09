@@ -35,7 +35,10 @@
         "signupAttributes": [
           "EMAIL"
         ],
-        "socialProviders": [],
+        "socialProviders": [
+          "FACEBOOK",
+          "GOOGLE"
+        ],
         "usernameAttributes": [],
         "verificationMechanisms": [
           "EMAIL"
@@ -49,6 +52,96 @@
     "S3AndCloudFront": {
       "providerPlugin": "awscloudformation",
       "service": "S3AndCloudFront"
+    }
+  },
+  "parameters": {
+    "AMPLIFY_auth_hepimusicca90a7e7_allowUnauthenticatedIdentities": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_authRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_authRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_identityPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_identityPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_nativeClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_unauthRoleArn": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_unauthRoleName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_userPoolId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_userPoolName": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
+    },
+    "AMPLIFY_auth_hepimusicca90a7e7_webClientId": {
+      "usedBy": [
+        {
+          "category": "auth",
+          "resourceName": "hepimusicca90a7e7"
+        }
+      ]
     }
   },
   "storage": {

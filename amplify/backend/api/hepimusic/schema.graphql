@@ -6,6 +6,8 @@ type Song @model {
   key: String! @primaryKey
   fileUrl: String!
   fileKey: String!
+  listens: [String]
+  trendingListens: [String]
   listOfUidDownVotes: [String]
   listOfUidUpVotes: [String]
   name: String!

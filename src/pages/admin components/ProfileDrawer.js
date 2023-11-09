@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
 import List from '@mui/material/List';
 import { BsChevronRight } from 'react-icons/bs';
-import { BiLogOut, BiWorld, BiSupport, BiQuestionMark } from 'react-icons/bi'
+import { BiLogOut, BiWorld, BiSupport, BiQuestionMark, BiUserX, BiUser } from 'react-icons/bi'
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -17,7 +17,7 @@ Amplify.configure(awsconfig)
 
 
 
-const ProfileDrawer = ({ isOpen, setIsOpen }) => {
+const ProfileDrawer = ({ isOpen, setIsOpen, userInfo }) => {
     const [state, setState] = React.useState({
         top: false,
         left: false,
@@ -28,6 +28,7 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
         'Log out of my account',
         'What is Hepi',
         'Support',
+        userInfo?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2" || userInfo?.attributes?.sub === "d153bd3a-9041-70a2-b70d-470c066a714f" || userInfo?.attributes?.sub === "11537dfa-20c1-70df-f960-7f647b48dc61" ? 'Admin Panel' : '',
     ];
     async function authSignOut() {
         try {
@@ -53,6 +54,10 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
             case 1:
                 return (
                     <BiQuestionMark style={{ fontSize: '1.8em', color: '#f3b007' }} />
+                );
+            case 3:
+                return (
+                    <BiUser style={{ fontSize: '1.8em', color: '#f3b007' }} />
                 )
             default:
                 return
@@ -96,7 +101,7 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
                     }}>
                         {
                             index === 1 &&
-                            <Link to={'/aboutus'} style={{ width: '-webkit-fill-available' }}>
+                            <Link to={'/aboutus'} style={{ width: '-webkit-fill-available', textDecoration: 'none'  }}>
                                 <ListItemButton>
                                     <ListItemIcon>
                                         <RenderIcon i={index} />
@@ -107,7 +112,7 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
                             </Link>
                         }
                         {
-                            index !== 1 &&
+                            index !== 1 && index !== 3 &&
                             <ListItemButton>
                                 <ListItemIcon>
                                     <RenderIcon i={index} />
@@ -115,6 +120,18 @@ const ProfileDrawer = ({ isOpen, setIsOpen }) => {
                                 <ListItemText primary={text} sx={{ color: '#fff' }} />
                                 <BsChevronRight style={{ color: '#ccc' }} />
                             </ListItemButton>
+                        }
+                        {
+                            index === 3 && text === 'Admin Panel' &&
+                            <Link to={'/admin'} style={{ width: '-webkit-fill-available', textDecoration: 'none' }}>
+                                <ListItemButton>
+                                    <ListItemIcon>
+                                        <RenderIcon i={index} />
+                                    </ListItemIcon>
+                                    <ListItemText primary={text} sx={{ color: '#fff' }} />
+                                    <BsChevronRight style={{ color: '#ccc' }} />
+                                </ListItemButton>
+                            </Link>
                         }
                     </ListItem>
                 ))}

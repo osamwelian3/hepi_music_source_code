@@ -14,6 +14,8 @@ type EagerSong = {
   readonly key: string;
   readonly fileUrl: string;
   readonly fileKey: string;
+  readonly listens?: (string | null)[] | null;
+  readonly trendingListens?: (string | null)[] | null;
   readonly listOfUidDownVotes?: (string | null)[] | null;
   readonly listOfUidUpVotes?: (string | null)[] | null;
   readonly name: string;
@@ -34,6 +36,8 @@ type LazySong = {
   readonly key: string;
   readonly fileUrl: string;
   readonly fileKey: string;
+  readonly listens?: (string | null)[] | null;
+  readonly trendingListens?: (string | null)[] | null;
   readonly listOfUidDownVotes?: (string | null)[] | null;
   readonly listOfUidUpVotes?: (string | null)[] | null;
   readonly name: string;

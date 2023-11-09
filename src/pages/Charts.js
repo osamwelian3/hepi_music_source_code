@@ -1,26 +1,29 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { IoAddOutline, IoAddSharp } from 'react-icons/io5'
+import { IoAddOutline, IoAddSharp, IoPlay } from 'react-icons/io5'
 import { Modal, Spinner } from 'react-bootstrap';
 import { ref as sRef } from 'firebase/storage';
 import { getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { addDoc, arrayRemove, arrayUnion, collection, doc, increment, onSnapshot, setDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from "uuid";
-import { BsCaretDown, BsCaretUp } from 'react-icons/bs';
+import { BsCaretDown, BsCaretUp, BsPlay } from 'react-icons/bs';
 import { AiFillCaretDown, AiFillCaretUp } from 'react-icons/ai'
 import { BiArrowBack } from 'react-icons/bi'
 import { auth, db } from '../config/fire';
 import { Link } from 'react-router-dom';
-import { Amplify, API, Auth, graphqlOperation } from 'aws-amplify';
+import { Amplify, API, Auth, DataStore, graphqlOperation } from 'aws-amplify';
 import { getSong, listSongs } from '../graphql/queries';
 import { updateSong } from '../graphql/mutations';
 import awsconfig from '../aws-exports';
 import ImageWithFallback from '../components/ImageWithFallback';
 import album_art from '../components/fallbackImages/album_art.jpeg';
+import { Helmet } from 'react-helmet';
+import { formatNumber } from '../utilities/utility';
+import { Song } from '../models';
 Amplify.configure(awsconfig);
-function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, triggerShouldFetch }) {
+function Charts({ arr, setPlaylist, setIsBigPlayerVisible, setSelectedSong, selectedSong, triggerShouldFetch }) {
+    const [updatedArr, setUpdatedArr] = useState(arr);
     const [mainFil, setMainFil] = useState(50)
     const [currentUser, setCurrentUser] = useState(null)
-    const [updatedArr, setUpdatedArr] = useState(arr);
     async function getCurrentUser(){
         const promise = new Promise(async function (resolve){
             await Auth.currentUserInfo().then((user)=>{
@@ -59,26 +62,43 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
             return item;
         });
         setUpdatedArr(updateArr);
-        // setDoc(doc(db, 'songs', key), {
-        //     listOfUidUpVotes: arrayUnion(auth.currentUser.uid)
-        // }, { merge: true })
-        // setDoc(doc(db, 'songs', key), {
-        //     listOfUidDownVotes: arrayRemove(auth.currentUser.uid)
-        // }, { merge: true })
-        await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
-            console.log(getRes.data?.getSong.listOfUidUpVotes);
-            let temp = [];
-            temp = temp.concat(getRes.data?.getSong.listOfUidUpVotes);
-            const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
+        
+        const original = await DataStore.query(Song, key)
+
+        if (original) {
+            console.log('DataStore fetch upvote Song Success')
+            let temp = []
+            temp = temp.concat(original.listOfUidUpVotes);
             temp.push(currentUser?.attributes?.sub)
-            modifiedSong.listOfUidUpVotes = temp;
-            modifiedSong.listOfUidDownVotes = getRes.data?.getSong.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
-            console.log(modifiedSong);
-            await API.graphql(graphqlOperation(updateSong, {input: modifiedSong})).then((res)=>{
-                console.log(res);
-                triggerShouldFetch();
-            });
-        })
+            const updatedSong = await DataStore.save(
+                Song.copyOf(original, updated => {
+                    updated.listOfUidUpVotes = temp
+                    updated.listOfUidDownVotes = original.listOfUidDownVotes.filter(item => item !== currentUser?.attributes?.sub)
+                })
+            )
+            if (updatedSong) {
+                console.log('DataStore Update upvote Song Success')
+                triggerShouldFetch()
+            } else {
+                console.log('DataStore Update upvote Song Failed')
+            }
+        } else {
+            console.log('DataStore fetch upvote Song Failed')
+        }
+        // await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
+        //     console.log(getRes.data?.getSong.listOfUidUpVotes);
+        //     let temp = [];
+        //     temp = temp.concat(getRes.data?.getSong.listOfUidUpVotes);
+        //     const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
+        //     temp.push(currentUser?.attributes?.sub)
+        //     modifiedSong.listOfUidUpVotes = temp;
+        //     modifiedSong.listOfUidDownVotes = getRes.data?.getSong.listOfUidDownVotes.filter(item => item !== currentUser?.attributes?.sub)
+        //     console.log(modifiedSong);
+        //     await API.graphql(graphqlOperation(updateSong, {input: modifiedSong})).then((res)=>{
+        //         console.log(res);
+        //         triggerShouldFetch();
+        //     });
+        // })
     }
     async function downVote(key) {
         const updateArr = arr.map((item) => {
@@ -94,27 +114,43 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
             return item;
         });
         setUpdatedArr(updateArr);
-        // setDoc(doc(db, 'songs', key), {
-        //     listOfUidDownVotes: arrayUnion(auth.currentUser.uid)
-        // }, { merge: true })
-        // setDoc(doc(db, 'songs', key), {
-        //     listOfUidUpVotes: arrayRemove(auth.currentUser.uid)
-        // }, { merge: true })
 
-        await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
-            console.log(getRes.data?.getSong.listOfUidUpVotes);
-            let temp = [];
-            temp = temp.concat(getRes.data?.getSong.listOfUidDownVotes);
-            const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
+        const original = await DataStore.query(Song, key)
+
+        if (original) {
+            console.log('DataStore fetch downvote Song Success')
+            let temp = []
+            temp = temp.concat(original.listOfUidDownVotes);
             temp.push(currentUser?.attributes?.sub)
-            modifiedSong.listOfUidDownVotes = temp;
-            modifiedSong.listOfUidUpVotes = getRes.data?.getSong.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
-            console.log(modifiedSong);
-            await API.graphql(graphqlOperation(updateSong, {input: modifiedSong})).then((res)=>{
-                console.log(res);
-                triggerShouldFetch();
-            });
-        })
+            const updatedSong = await DataStore.save(
+                Song.copyOf(original, updated => {
+                    updated.listOfUidDownVotes = temp
+                    updated.listOfUidUpVotes = original.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
+                })
+            )
+            if (updatedSong) {
+                console.log('DataStore Update downvote Song Success')
+                triggerShouldFetch()
+            } else {
+                console.log('DataStore Update downvote Song Failed')
+            }
+        } else {
+            console.log('DataStore fetch downvote Song Failed')
+        }
+        // await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
+        //     console.log(getRes.data?.getSong.listOfUidUpVotes);
+        //     let temp = [];
+        //     temp = temp.concat(getRes.data?.getSong.listOfUidDownVotes);
+        //     const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
+        //     temp.push(currentUser?.attributes?.sub)
+        //     modifiedSong.listOfUidDownVotes = temp;
+        //     modifiedSong.listOfUidUpVotes = getRes.data?.getSong.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
+        //     console.log(modifiedSong);
+        //     await API.graphql(graphqlOperation(updateSong, {input: modifiedSong})).then((res)=>{
+        //         console.log(res);
+        //         triggerShouldFetch();
+        //     });
+        // })
     }
     async function removeVote(key, voteType) {
         // setDoc(doc(db, 'songs', key), {
@@ -123,11 +159,11 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
         // setDoc(doc(db, 'songs', key), {
         //     listOfUidDownVotes: arrayRemove(auth.currentUser.uid)
         // }, { merge: true })
-        await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
-            console.log(getRes.data?.getSong.listOfUidUpVotes);
-            const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
-            modifiedSong.listOfUidUpVotes = [];
-            modifiedSong.listOfUidDownVotes = [];
+
+        const original = await DataStore.query(Song, key)
+
+        if (original) {
+            console.log('DataStore fetch removeVote Song Success')
             if (voteType === 'upVote'){
                 const updateArr = arr.map((item) => {
                     if (item.key === key) {
@@ -142,21 +178,17 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
                     return item;
                 });
                 setUpdatedArr(updateArr);
-                console.log(modifiedSong);
-                await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then(async (res)=>{
-                    console.log(res);
-                    const temp = getRes.data?.getSong.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
-                    console.log(Object.values(getRes.data?.getSong.listOfUidUpVotes))
-                    console.log(temp.length === 0)
-                    console.log(typeof(temp));
-                    modifiedSong.listOfUidUpVotes = temp;
-                    modifiedSong.listOfUidDownVotes = getRes.data?.getSong.listOfUidDownVotes
-                    console.log(modifiedSong);
-                    await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then((res)=>{
-                        console.log(res);
-                        triggerShouldFetch();
-                    });
-                });
+                const updatedSong = await DataStore.save(
+                    Song.copyOf(original, updated => {
+                        updated.listOfUidUpVotes = original.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
+                    })
+                )
+                if (updatedSong) {
+                    console.log('DataStore Update Song remove upvote Success')
+                    triggerShouldFetch()
+                } else {
+                    console.log('DataStore Update Song remove upvote Failed')
+                }
             }
             if (voteType === 'downVote'){
                 const updateArr = arr.map((item) => {
@@ -172,22 +204,96 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
                     return item;
                 });
                 setUpdatedArr(updateArr);
-                console.log(modifiedSong);
-                await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then(async (res)=>{
-                    console.log(res);
-                    const temp = getRes.data?.getSong.listOfUidDownVotes.filter(item => item !== currentUser?.attributes?.sub)
-                    console.log(temp)
-                    modifiedSong.listOfUidDownVotes = temp;
-                    modifiedSong.listOfUidUpVotes = getRes.data?.getSong.listOfUidUpVotes
-                    console.log(modifiedSong);
-                    await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then((res)=>{
-                        console.log(res);
-                        triggerShouldFetch();
-                    });
-                });
+                const updatedSong = await DataStore.save(
+                    Song.copyOf(original, updated => {
+                        updated.listOfUidDownVotes = original.listOfUidDownVotes.filter(item => item !== currentUser?.attributes?.sub)
+                    })
+                )
+                if (updatedSong) {
+                    console.log('DataStore Update Song remove downvote Success')
+                    triggerShouldFetch()
+                } else {
+                    console.log('DataStore Update Song remove downvote Failed')
+                }
             }
-        })
+        } else {
+            console.log('DataStore fetch removeVote Song Failed')
+        }
+        // await API.graphql(graphqlOperation(getSong, {key: key})).then(async (getRes)=>{
+        //     console.log(getRes.data?.getSong.listOfUidUpVotes);
+        //     const { createdAt, updatedAt, _deleted, _lastChangedAt, ...modifiedSong } = getRes.data?.getSong
+        //     modifiedSong.listOfUidUpVotes = [];
+        //     modifiedSong.listOfUidDownVotes = [];
+        //     if (voteType === 'upVote'){
+        //         const updateArr = arr.map((item) => {
+        //             if (item.key === key) {
+        //               return {
+        //                 ...item,
+        //                 listOfUidDownVotes: [...item.listOfUidDownVotes],
+        //                 listOfUidUpVotes: item.listOfUidUpVotes.filter(
+        //                   (uid) => uid !== currentUser?.attributes?.sub
+        //                 ),
+        //               };
+        //             }
+        //             return item;
+        //         });
+        //         setUpdatedArr(updateArr);
+        //         console.log(modifiedSong);
+        //         await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then(async (res)=>{
+        //             console.log(res);
+        //             const temp = getRes.data?.getSong.listOfUidUpVotes.filter(item => item !== currentUser?.attributes?.sub)
+        //             console.log(Object.values(getRes.data?.getSong.listOfUidUpVotes))
+        //             console.log(temp.length === 0)
+        //             console.log(typeof(temp));
+        //             modifiedSong.listOfUidUpVotes = temp;
+        //             modifiedSong.listOfUidDownVotes = getRes.data?.getSong.listOfUidDownVotes
+        //             console.log(modifiedSong);
+        //             await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then((res)=>{
+        //                 console.log(res);
+        //                 triggerShouldFetch();
+        //             });
+        //         });
+        //     }
+        //     if (voteType === 'downVote'){
+        //         const updateArr = arr.map((item) => {
+        //             if (item.key === key) {
+        //               return {
+        //                 ...item,
+        //                 listOfUidUpVotes: [...item.listOfUidUpVotes],
+        //                 listOfUidDownVotes: item.listOfUidDownVotes.filter(
+        //                   (uid) => uid !== currentUser?.attributes?.sub
+        //                 ),
+        //               };
+        //             }
+        //             return item;
+        //         });
+        //         setUpdatedArr(updateArr);
+        //         console.log(modifiedSong);
+        //         await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then(async (res)=>{
+        //             console.log(res);
+        //             const temp = getRes.data?.getSong.listOfUidDownVotes.filter(item => item !== currentUser?.attributes?.sub)
+        //             console.log(temp)
+        //             modifiedSong.listOfUidDownVotes = temp;
+        //             modifiedSong.listOfUidUpVotes = getRes.data?.getSong.listOfUidUpVotes
+        //             console.log(modifiedSong);
+        //             await API.graphql({query: updateSong, variables: {input: modifiedSong}}).then((res)=>{
+        //                 console.log(res);
+        //                 triggerShouldFetch();
+        //             });
+        //         });
+        //     }
+        // })
     }
+    // useEffect(()=>{
+    //     if (updatedArr && mainFil){
+    //         setPlaylist(updatedArr?.sort((a, b) => { const aLength = (a?.listOfUidUpVotes?.length || 0) + (a?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0); const bLength = (b?.listOfUidUpVotes?.length || 0) + (b?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0); return aLength - bLength; }).reverse().slice(0, mainFil));
+    //         console.log(updatedArr.sort((a, b) => {
+    //             const aLength = (a?.listOfUidUpVotes?.length || 0) + (a?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0);
+    //             const bLength = (b?.listOfUidUpVotes?.length || 0) + (b?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0);
+    //             return aLength - bLength;
+    //         }).reverse().slice(0, mainFil))
+    //     }
+    // }, [mainFil, updatedArr])
     console.log(mainFil);
     console.log(updatedArr);
     if (!updatedArr) {
@@ -195,6 +301,25 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
     }
     return (
         <div className='page_container'>
+            <Helmet>
+                <title>{'Charts | Hepi Music'}</title>
+                <meta name="description" content={`Top ${mainFil} rated on Hepi Music`} />
+                <meta name="keywords" content="Hepi, Music, Favorites, Songs, Stream, Play, Online music, Best" />
+
+                {/*<!--  Essential META Tags -->*/}
+                <meta property="og:title" content="Charts | Hepi Music" />
+                <meta property="og:type" content="music.album" />
+                <meta property="og:image:width" content="500" />
+                <meta property="og:image:height" content="500" />
+                <meta property="og:image" content="%PUBLIC_URL%/logo2.jpg" />
+                <meta property="og:url" content="https://hepimusic.com/charts" />
+                <meta name="twitter:card" content="summary_large_image" />
+
+                {/*<!--  Non-Essential, But Recommended -->*/}
+                <meta property="og:description" content={`Top ${mainFil} rated on Hepi Music`} />
+                <meta property="og:site_name" content="Hepi Music Charts" />
+                <meta name="twitter:image:alt" content="Hepi Music Charts"></meta>
+            </Helmet>
             <h6 style={{ marginBottom: '15px' }}>Charts</h6>
             <select value={mainFil} onChange={(e) => { setMainFil(e.target.value) }} className='btn' style={{ width: '-webkit-fill-available', padding: '10px 0px', maxWidth: '400px', color: '#f3b007', background: '#151515' }}>
                 <option value={50}>Top 50</option>
@@ -203,11 +328,17 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
             </select>
             <hr></hr>
             {
-                updatedArr && updatedArr.sort((a, b) => a?.listOfUidUpVotes?.length - b?.listOfUidUpVotes?.length).reverse().slice(0, mainFil).map((one) => {
+                updatedArr && updatedArr.sort((a, b) => {
+                    // (a?.listOfUidUpVotes?.length+a?.listens?.length) - (b?.listOfUidUpVotes?.length+b?.listens?.length)
+                    const aLength = (a?.listOfUidUpVotes?.length || 0) + (a?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0);
+                    const bLength = (b?.listOfUidUpVotes?.length || 0) + (b?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0);
+                    return aLength - bLength;
+                }).reverse().slice(0, mainFil).map((one, index) => {
                     return (
                         <>
-                            <div  onClick={() => { setSelectedSong(one); setIsBigPlayerVisible(true) }} style={{ width: '-webkit-fill-available', padding: '10px', borderBottom: '1px solid #6d6d6d', display: 'flex' }}>
-                                <Link to={'/song'}>
+                            <div  onClick={() => { setPlaylist(updatedArr?.sort((a, b) => { const aLength = (a?.listOfUidUpVotes?.length || 0) + (a?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0); const bLength = (b?.listOfUidUpVotes?.length || 0) + (b?.listens?.length || 0) - (a?.listOfUidDownVotes?.length || 0); return aLength - bLength; }).reverse()); setSelectedSong(one); setIsBigPlayerVisible(true) }} style={{ width: '-webkit-fill-available', padding: '10px', borderBottom: '1px solid #6d6d6d', display: 'flex' }}>
+                                <span style={{display: 'block', marginRight: '10px', alignSelf: 'center'}}>{index+1}</span>
+                                <Link style={{alignSelf: 'center'}} to={'/song'}>
                                     <ImageWithFallback src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/"+one.thumbnailKey)}
                                         fallbackSrc={album_art}
                                         style={{ height: '50px', width: '50px', borderRadius: '5px', marginRight: '15px' }}
@@ -216,7 +347,8 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
                                 <div style={{ flex: '1' }}>
                                     <Link to={'/song'} style={{ textDecoration: 'none', color: '#fff' }}>
                                         <p style={{ fontSize: '0.9em', marginBottom: '0px' }}>{one.name}</p>
-                                        <p style={{ fontSize: '0.8em', color: '#ccc', margin: '0' }}>{one?.selectedCreator?.name}</p>
+                                        <p style={{ fontSize: '0.8em', color: '#ccc', margin: '0' }}>{JSON.parse(one?.selectedCreator)?.name}</p>
+                                        <p style={{ fontSize: '0.8em', color: '#ccc', margin: '0' }}><em style={{display: 'flex'}}><IoPlay style={{display: 'inline-block', alignSelf: 'center'}}/><span>{formatNumber(one?.listens?.length)}</span></em></p>
                                         <p style={{ fontSize: '0.8em', color: '#ccc', margin: '0', color: '#f3b007', fontWeight: 'bold' }}>{one?.key === selectedSong?.key && 'Currently Playing'}</p>
                                     </Link>
                                 </div>
@@ -279,6 +411,7 @@ function Charts({ arr, setIsBigPlayerVisible, setSelectedSong, selectedSong, tri
             }
             <br></br>
             <br></br>
+            <span className='render' style={{display: 'none'}}>Rendered</span>
         </div >
     )
 }

@@ -4,14 +4,14 @@ import { FaChartLine } from 'react-icons/fa'
 import { HiOutlineUserGroup } from 'react-icons/hi';
 import '../pages/pages.css'
 import { BiLibrary } from 'react-icons/bi';
-import { IoAlbums, IoHeart } from 'react-icons/io5';
+import { IoAlbums, IoHeart, IoTrendingUp } from 'react-icons/io5';
 import { CgProfile } from 'react-icons/cg'
 import { auth } from '../config/fire';
 import { signOut } from 'firebase/auth';
 import { Amplify, Storage, Auth } from 'aws-amplify';
 import awsconfig from '../aws-exports';
 Amplify.configure(awsconfig)
-function Header({ setIsProfileShown, isAuthenticated }) {
+function Header({ setIsProfileShown, isAuthenticated, setUserInfo }) {
     const [logo, setLogo] = useState()
     const [currentUser, setCurrentUser] = useState(null)
     async function getCurrentUser(){
@@ -27,11 +27,12 @@ function Header({ setIsProfileShown, isAuthenticated }) {
         await getCurrentUser().then((res)=>{
             console.log(res)
             setCurrentUser(res)
+            setUserInfo(res)
         })
-        if (!auth.currentUser){
-            authSignOut()
-            setCurrentUser(null)
-        }
+        // if (!auth.currentUser){
+        //     authSignOut()
+        //     setCurrentUser(null)
+        // }
     }, [isAuthenticated]);
     const history = useHistory()
     const location = useLocation();
@@ -45,6 +46,7 @@ function Header({ setIsProfileShown, isAuthenticated }) {
     async function logOut() {
         await authSignOut();
         setCurrentUser(null)
+        setUserInfo(null)
         return signOut(auth)
     }
     function getWindowDimensions() {
@@ -105,6 +107,7 @@ function Header({ setIsProfileShown, isAuthenticated }) {
                     <NavLink exact to='/charts' className={'header_navlink'} activeClassName="active" style={{ width: getWindowDimensions().width > 600 ? '180px' : '100%', height: '100%', display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'normal' }} activeStyle={{ display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', color: "#f3b007" }}><FaChartLine style={{ marginRight: getWindowDimensions().width > 600 ? '10px' : '0px', fontSize: '1em' }} /><font style={{ fontSize: '0.8em' }}>Charts</font></NavLink>
                     <NavLink exact to='/albums' className={'header_navlink'} activeClassName="active" style={{ width: getWindowDimensions().width > 600 ? '180px' : '100%', height: '100%', display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'normal' }} activeStyle={{ display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', color: "#f3b007" }}><IoAlbums style={{ marginRight: getWindowDimensions().width > 600 ? '10px' : '0px', fontSize: '1em' }} /><font style={{ fontSize: '0.8em' }}>Albums</font></NavLink>
                     <NavLink exact to='/fav' className={'header_navlink'} activeClassName="active" style={{ width: getWindowDimensions().width > 600 ? '180px' : '100%', height: '100%', display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'normal' }} activeStyle={{ display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', color: "#f3b007" }}><IoHeart style={{ marginRight: getWindowDimensions().width > 600 ? '10px' : '0px', fontSize: '1em' }} /><font style={{ fontSize: '0.8em' }}>Favorites</font></NavLink>
+                    <NavLink exact to='/trending' className={'header_navlink'} activeClassName="active" style={{ width: getWindowDimensions().width > 600 ? '180px' : '100%', height: '100%', display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'normal' }} activeStyle={{ display: 'flex', flexDirection: getWindowDimensions().width > 600 ? 'row' : 'column', alignItems: 'center', justifyContent: 'center', color: "#f3b007" }}><IoTrendingUp style={{ marginRight: getWindowDimensions().width > 600 ? '10px' : '0px', fontSize: '1em' }} /><font style={{ fontSize: '0.8em' }}>Trending</font></NavLink>
                     {
                         getWindowDimensions().width > 600 &&
                         <>

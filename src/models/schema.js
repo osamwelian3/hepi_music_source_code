@@ -24,6 +24,22 @@ export const schema = {
                     "isRequired": true,
                     "attributes": []
                 },
+                "listens": {
+                    "name": "listens",
+                    "isArray": true,
+                    "type": "String",
+                    "isRequired": false,
+                    "attributes": [],
+                    "isArrayNullable": true
+                },
+                "trendingListens": {
+                    "name": "trendingListens",
+                    "isArray": true,
+                    "type": "String",
+                    "isRequired": false,
+                    "attributes": [],
+                    "isArrayNullable": true
+                },
                 "listOfUidDownVotes": {
                     "name": "listOfUidDownVotes",
                     "isArray": true,
@@ -393,5 +409,5 @@ export const schema = {
     "enums": {},
     "nonModels": {},
     "codegenVersion": "3.4.3",
-    "version": "188660cf93513f71785e855d0870dd52"
+    "version": "128a04efabfae91ec999488f06442fec"
 };

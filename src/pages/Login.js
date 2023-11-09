@@ -8,7 +8,7 @@ import { useHistory } from 'react-router-dom';
 import { auth, db2 } from '../config/fire'
 import { db } from '../config/fire'
 import awsconfig from '../aws-exports';
-import AudioPlayer from 'react-h5-audio-player';
+import { CognitoHostedUIIdentityProvider } from '@aws-amplify/auth';
 Amplify.configure(awsconfig);
 
 
@@ -16,6 +16,7 @@ function Login({ setIsLoginVisible }) {
     const [register, setRegister] = useState(false)
     const [userName, setUserName] = useState("")
     const [email, setEmail] = useState("")
+    const [emailVerificationMessage, setEmailVerificationMessage] = useState("")
     const [phone_number, setPhone_Number] = useState("")
     const [password, setPassword] = useState("")
     const [isAuthenticating, setIsAuthenticating] = useState(false)
@@ -63,7 +64,7 @@ function Login({ setIsLoginVisible }) {
                                 console.log(res);
                                 setIsAuthenticating(false)
                                 console.log(res?.attributes?.sub);
-                                if (res?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2") {
+                                if (res?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2" || res?.attributes?.sub === "d153bd3a-9041-70a2-b70d-470c066a714f" || res?.attributes?.sub === "11537dfa-20c1-70df-f960-7f647b48dc61") {
                                     history.push('/admin')
                                 } else {
                                     console.log(currentUser?.attributes?.sub);
@@ -88,7 +89,7 @@ function Login({ setIsLoginVisible }) {
                                             }).then(async (user)=>{
                                                 console.log(user);
                                                 setIsAuthenticating(false)
-                                                if (user?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2") {
+                                                if (user?.attributes?.sub === "91d34d2a-3001-7095-546c-6df22cb9d8a2" || user?.attributes?.sub === "d153bd3a-9041-70a2-b70d-470c066a714f" || user?.attributes?.sub === "11537dfa-20c1-70df-f960-7f647b48dc61") {
                                                     history.push('/admin')
                                                 } else {
                                                     history.push('/')
@@ -103,9 +104,9 @@ function Login({ setIsLoginVisible }) {
                                         setIsAuthenticating(false)
                                         return false;
                                     case 'UserNotConfirmedException':
-                                        alert("Please confirm your new account before the closure of the migration period.");
+                                        alert("Please check your email and click on the verification link to finish your account creation.");
                                         setIsAuthenticating(false)
-                                        if (auth.currentUser.uid === "7rbDXS9eipV7OXSTYCWsnWu8wxx1") {
+                                        if (auth.currentUser.uid === "91d34d2a-3001-7095-546c-6df22cb9d8a2" || auth.currentUser.uid === "d153bd3a-9041-70a2-b70d-470c066a714f" || auth.currentUser.uid === "11537dfa-20c1-70df-f960-7f647b48dc61") {
                                             history.push('/admin')
                                         } else {
                                             history.push('/')
@@ -149,6 +150,7 @@ function Login({ setIsLoginVisible }) {
         // Sign in with Google popup
         signInWithPopup(auth, provider)
             .then((result) => {
+                console.log(result);
                 setDoc(doc(db, 'users', auth.currentUser.uid, 'user_details', 'info'), {
                     name: userName,
                     uid: auth.currentUser.uid
@@ -228,7 +230,8 @@ function Login({ setIsLoginVisible }) {
                             uid: auth.currentUser.uid
                         }).then(() => {
                             setIsAuthenticating(false)
-                            history.push('/')
+                            setEmailVerificationMessage('You are almost there. Go to your email and click on the verification link.')
+                            // history.push('/')
                         })
                     }).catch((error)=>{
                         setIsAuthenticating(false)
@@ -269,6 +272,22 @@ function Login({ setIsLoginVisible }) {
             setIsLoginVisible(false)
         }
     }, [])
+    if (emailVerificationMessage !== ""){
+        return (
+            <div className='login_bg' style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <div className='login_form_bg' style={{ textAlign: 'center', width: "90vw", maxWidth: '400px', height: 'max-content', padding: '10px', borderRadius: '10px' }} >
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '-10vh', marginBottom: '20px', padding: '0px 10px' }}>
+                        <img src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo2.jpg")} style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
+
+                    </div>
+                    <div>
+                        <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }}>{emailVerificationMessage}</p>
+                        <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }} onClick={() => { setEmailVerificationMessage(""); setRegister(false) }}>Already verified? Login here.</p>
+                    </div>
+                </div>
+            </div>
+        )
+    }
     return (
         <div className='login_bg' style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             {isAuthenticating ? 
@@ -284,9 +303,9 @@ function Login({ setIsLoginVisible }) {
                                 <img src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo2.jpg")} style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
 
                             </div>
-                            <div>
+                            {/* <div>
                                 <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }}>We are currently migrating to a new server to serve you better with high quality streaming. Due to this we will require all users to verify their accounts. Once you login to your previous account. An email will be sent to your email address to verify your new account. Thank you for your continued loyalty to Hepi Music.</p>
-                            </div>
+                            </div> */}
                             <div>
                                 <input type="email" placeholder='Email' onChange={(e) => { setEmail(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
                             </div>
@@ -298,8 +317,8 @@ function Login({ setIsLoginVisible }) {
                             <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }} >Or login with</p>
 
                             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-                                <img onClick={() => { googleAuth() }} class="google-icon" src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style={{ height: '50px', width: '50px', marginRight: '40px' }} />
-                                <img onClick={() => { facebookAuth() }} class="google-icon" src="https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Facebook_f_logo_%282021%29.svg/1200px-Facebook_f_logo_%282021%29.svg.png" style={{ height: '50px', width: '50px' }} />
+                                <img onClick={async () => { const { url } = await Auth.federatedSignIn({provider: 'Google'}); window.open(url, '_blank', 'width=500,height=600'); /*googleAuth()*/ }} class="google-icon" src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" style={{ height: '50px', width: '50px', marginRight: '40px' }} />
+                                <img onClick={async () => { const { url } = await Auth.federatedSignIn({provider: CognitoHostedUIIdentityProvider.Facebook}); window.open(url, '_blank', 'width=500,height=600'); /*facebookAuth()*/ }} class="google-icon" src="https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Facebook_f_logo_%282021%29.svg/1200px-Facebook_f_logo_%282021%29.svg.png" style={{ height: '50px', width: '50px' }} />
                             </div>
                         </div>
                         :
@@ -307,9 +326,9 @@ function Login({ setIsLoginVisible }) {
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginTop: '-10vh', marginBottom: '20px', padding: '0px 10px' }}>
                                 <img src={encodeURI("https://dn1i8z7909ivj.cloudfront.net/public/hepi_logo2.jpg")} style={{ marginLeft: '-35px', height: '100px', width: '150px' }} />
                             </div>
-                            <div>
+                            {/* <div>
                                 <p style={{ color: '#f3b007', cursor: 'pointer', margin: '10px 5px' }}>We are currently migrating to a new server to serve you better with high quality streaming. Due to this we will require all users to verify their accounts. Once you login to your previous account. An email will be sent to your email address to verify your new account. Thank you for your continued loyalty to Hepi Music.</p>
-                            </div>
+                            </div> */}
                             <div>
                                 <input type="text" placeholder='User name' onChange={(e) => { setUserName(e.target.value) }} style={{ width: '95%', height: '45px', marginBottom: '10px', background: 'none', padding: '10px', border: '1px solid #ffffff2e', borderRadius: '10px', color: '#f3b007' }} />
                             </div>

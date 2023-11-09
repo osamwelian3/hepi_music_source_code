@@ -7,6 +7,8 @@ export const getSong = /* GraphQL */ `
       key
       fileUrl
       fileKey
+      listens
+      trendingListens
       listOfUidDownVotes
       listOfUidUpVotes
       name
@@ -39,6 +41,8 @@ export const listSongs = /* GraphQL */ `
         key
         fileUrl
         fileKey
+        listens
+        trendingListens
         listOfUidDownVotes
         listOfUidUpVotes
         name
@@ -51,6 +55,42 @@ export const listSongs = /* GraphQL */ `
         updatedAt
       }
       nextToken
+      startedAt
+    }
+  }
+`;
+export const syncSongs = /* GraphQL */ `
+  query SyncSongs(
+    $filter: ModelSongFilterInput
+    $limit: Int
+    $nextToken: String
+    $lastSync: AWSTimestamp
+  ) {
+    syncSongs(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      lastSync: $lastSync
+    ) {
+      items {
+        key
+        fileUrl
+        fileKey
+        listens
+        trendingListens
+        listOfUidDownVotes
+        listOfUidUpVotes
+        name
+        partOf
+        selectedCategory
+        selectedCreator
+        thumbnail
+        thumbnailKey
+        createdAt
+        updatedAt
+      }
+      nextToken
+      startedAt
     }
   }
 `;
@@ -100,6 +140,38 @@ export const listCreators = /* GraphQL */ `
         updatedAt
       }
       nextToken
+      startedAt
+    }
+  }
+`;
+export const syncCreators = /* GraphQL */ `
+  query SyncCreators(
+    $filter: ModelCreatorFilterInput
+    $limit: Int
+    $nextToken: String
+    $lastSync: AWSTimestamp
+  ) {
+    syncCreators(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      lastSync: $lastSync
+    ) {
+      items {
+        key
+        desc
+        facebook
+        instagram
+        name
+        thumbnail
+        thumbnailKey
+        twitter
+        youtube
+        createdAt
+        updatedAt
+      }
+      nextToken
+      startedAt
     }
   }
 `;
@@ -135,6 +207,31 @@ export const listCategories = /* GraphQL */ `
         updatedAt
       }
       nextToken
+      startedAt
+    }
+  }
+`;
+export const syncCategories = /* GraphQL */ `
+  query SyncCategories(
+    $filter: ModelCategoryFilterInput
+    $limit: Int
+    $nextToken: String
+    $lastSync: AWSTimestamp
+  ) {
+    syncCategories(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      lastSync: $lastSync
+    ) {
+      items {
+        key
+        name
+        createdAt
+        updatedAt
+      }
+      nextToken
+      startedAt
     }
   }
 `;
@@ -174,6 +271,33 @@ export const listAlbums = /* GraphQL */ `
         updatedAt
       }
       nextToken
+      startedAt
+    }
+  }
+`;
+export const syncAlbums = /* GraphQL */ `
+  query SyncAlbums(
+    $filter: ModelAlbumFilterInput
+    $limit: Int
+    $nextToken: String
+    $lastSync: AWSTimestamp
+  ) {
+    syncAlbums(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      lastSync: $lastSync
+    ) {
+      items {
+        key
+        name
+        thumbnail
+        thumbnailKey
+        createdAt
+        updatedAt
+      }
+      nextToken
+      startedAt
     }
   }
 `;
@@ -205,6 +329,33 @@ export const listUsers = /* GraphQL */ `
         updatedAt
       }
       nextToken
+      startedAt
+    }
+  }
+`;
+export const syncUsers = /* GraphQL */ `
+  query SyncUsers(
+    $filter: ModelUserFilterInput
+    $limit: Int
+    $nextToken: String
+    $lastSync: AWSTimestamp
+  ) {
+    syncUsers(
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      lastSync: $lastSync
+    ) {
+      items {
+        name
+        email
+        phone_number
+        id
+        createdAt
+        updatedAt
+      }
+      nextToken
+      startedAt
     }
   }
 `;

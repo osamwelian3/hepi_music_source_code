@@ -10,6 +10,8 @@ export const createSong = /* GraphQL */ `
       key
       fileUrl
       fileKey
+      listens
+      trendingListens
       listOfUidDownVotes
       listOfUidUpVotes
       name
@@ -32,6 +34,8 @@ export const updateSong = /* GraphQL */ `
       key
       fileUrl
       fileKey
+      listens
+      trendingListens
       listOfUidDownVotes
       listOfUidUpVotes
       name
@@ -54,6 +58,8 @@ export const deleteSong = /* GraphQL */ `
       key
       fileUrl
       fileKey
+      listens
+      trendingListens
       listOfUidDownVotes
       listOfUidUpVotes
       name
